@@ -43,4 +43,10 @@ public class Consts {
 	public static final String TOPIC_ACTIVITY			= "activity";
 	public static final String TOPIC_CONTEXT			= "context";
 	public static final String TOPIC_SENSOR_DATA        = "sensor";
+	
+	public static final String TOPIC_DOOR        		= "door";
+	public static final String TOPIC_WINDOW        		= "window";
+	public static final String TOPIC_MOTION        		= "motion";
+	public static final String TOPIC_SWITCH        		= "switch";
+	public static final String TOPIC_TWILIGHT        	= "twilight";
 }

@@ -1,5 +1,5 @@
 /**
- * This class represent an atomic activity. Each atomic activity has a name and a
+ * This class represents an atomic activity. Each atomic activity has a name and a
  * weight. The weight represent importance of the atomic activity when included in 
  * a complex activity.
  * <p> To instantiate :

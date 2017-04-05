@@ -13,41 +13,20 @@ import com.mongodb.MongoClientURI;
 
 public class MongoDB {
 	public static void main (String[] args) {
-		try {
-			MongoClient mongoClient = new MongoClient(new MongoClientURI("mongodb://localhost:27017"));
-			DB database = mongoClient.getDB("ActivityDB");
-			DBCollection collection = database.getCollection("Activity");
-			
-			SimpleDateFormat sdf = new SimpleDateFormat("MMM dd,yyyy HH:mm");
-			Date timestamp = new Date();
-			
-//			DBObject activity = new BasicDBObject("id", sdf.format(timestamp))
-//										.append("activity", "close_door");
-//			
-//			collection.insert(activity);
-			
-			// get data
-			System.out.println("Data: ");
-			DBCursor cursor = collection.find();
-			while(cursor.hasNext()) {
-				DBObject storeData = cursor.next();
-				String time = storeData.get("id").toString();
-				System.out.println(storeData);
-				System.out.println("- Time: " + time);
-				try {
-					timestamp = sdf.parse(time);
-					System.out.println("- Time converted: " + sdf.format(timestamp));
-				} catch (ParseException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-				
-			}
-		} catch (UnknownHostException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+		String[] subcriberTopics = new String[5];
+		subcriberTopics[0] = Consts.TOPIC_DOOR;
+		subcriberTopics[1] = Consts.TOPIC_WINDOW;
+		subcriberTopics[2] = Consts.TOPIC_MOTION;
+		subcriberTopics[3] = Consts.TOPIC_SWITCH;
+		subcriberTopics[4] = Consts.TOPIC_TWILIGHT;
 		
+		String databaseName = "Events";
+		String collectionName = "SensorEvents";
+		SensorEventSubcriber subcriber = new SensorEventSubcriber(Consts.LOCALHOST,
+				"ID_GIANG", subcriberTopics, databaseName, collectionName);
+
+		subcriber	.setRunning(true);
+		//subcriber				.start();
 	}
 
 }
