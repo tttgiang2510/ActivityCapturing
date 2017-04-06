@@ -23,8 +23,8 @@ public class CAFactory {
 			mFactory.addAtomicActivity(Consts.A_OPEN_DOOR, 		0.1, false, false, false);
 			mFactory.addAtomicActivity(Consts.A_CLOSE_DOOR, 	0.1, false, true, false);
 			
-			mFactory.addContextAttribute(Consts.C_AT_WORKINGROOM       , 0.6, false, false , false);
-			mFactory.addContextAttribute(Consts.C_WORKINGROOM_LIGHT_ON , 0.4, false, false , true);
+			mFactory.addContextAttribute(Consts.C_AT_WORKINGROOM       , 0.6, false, false , true);
+			mFactory.addContextAttribute(Consts.C_WORKINGROOM_LIGHT_ON , 0.4, false, false , false);
 			
 			workingInARoom = mFactory.getmCA();
 			return workingInARoom;

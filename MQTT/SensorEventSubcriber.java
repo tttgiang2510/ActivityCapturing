@@ -9,16 +9,11 @@
 import java.net.UnknownHostException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.BlockingQueue;
-
 import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken;
 import org.eclipse.paho.client.mqttv3.MqttCallback;
 import org.eclipse.paho.client.mqttv3.MqttClient;
 import org.eclipse.paho.client.mqttv3.MqttException;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
-import org.json.JSONObject;
-
 import com.mongodb.BasicDBObject;
 import com.mongodb.DB;
 import com.mongodb.DBCollection;
@@ -27,15 +22,13 @@ import com.mongodb.MongoClient;
 import com.mongodb.MongoClientURI;
 
 public class SensorEventSubcriber implements MqttCallback {
-	public static final String MONGO_CLIENT_URI		= "mongodb://localhost:27017";
+	public static final String MONGO_CLIENT_URI		= "mongodb://127.0.0.1:27017";
 	public static final String DATE_FORMAT 			= "MMM dd,yyyy HH:mm";
 	private String hostname 		= null;
 	private String clientId 		= null;
 	private String[] subcribeTopics = null;
 	private boolean isRunning 		= true;
 	
-/*	private BlockingQueue<JSONObject> outQueue      = new ArrayBlockingQueue<>(100);  
-	private BlockingQueue<JSONObject> internalQueue = new ArrayBlockingQueue<>(100);*/
 	
 	MqttClient client;
 	
@@ -159,10 +152,6 @@ public class SensorEventSubcriber implements MqttCallback {
 		String receivedMessage = new String(payload, "UTF-8");
 		System.out.println("---Received: " + receivedMessage);
 		
-/*		JSONObject JSONmessage = new JSONObject();
-		JSONmessage.put(topic, receivedMessage);
-		
-		internalQueue.add(JSONmessage);*/
 		
 		// Save to database 
 		DBObject object = new BasicDBObject("timestamp", sdf.format(timestamp))
@@ -170,6 +159,7 @@ public class SensorEventSubcriber implements MqttCallback {
 									.append("status", message);
 
 		collection.insert(object);
+		System.out.println("---Inserted into DB: " + object);
 	}
 	
 	public static void main (String[] args) {
@@ -180,7 +170,7 @@ public class SensorEventSubcriber implements MqttCallback {
 		subcriberTopics[3] = Consts.TOPIC_SWITCH;
 		subcriberTopics[4] = Consts.TOPIC_TWILIGHT;
 		
-		String databaseName = "Events";
+		String databaseName = "ActivityCapturing";
 		String collectionName = "SensorEvents";
 		SensorEventSubcriber subcriber = new SensorEventSubcriber(Consts.LOCALHOST,
 				"ID_GIANG", subcriberTopics, databaseName, collectionName);
