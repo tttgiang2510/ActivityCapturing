@@ -16,12 +16,16 @@ public class CAFactory {
 		if(workingInARoom == null){
 			CAFactory factory = new CAFactory(Consts.CA_WORKING_IN_ROOM, 10800, 0.6);
 			
-			factory.addAtomicActivity(Consts.A_OPEN_DOOR,      0.1, true  , false , true  );
+/*			factory.addAtomicActivity(Consts.A_OPEN_DOOR,      0.1, true  , false , true  );
 			factory.addAtomicActivity(Consts.A_CLOSE_DOOR,    	0.1, false , false , false );
 			factory.addAtomicActivity(Consts.A_WALKING,        0.3, false , false , true );
 			factory.addAtomicActivity(Consts.A_SITTING,		0.3, false , false , true );
 			factory.addAtomicActivity(Consts.A_OPEN_DOOR, 		0.1, false, false, false);
-			factory.addAtomicActivity(Consts.A_CLOSE_DOOR, 	0.1, false, true, false);
+			factory.addAtomicActivity(Consts.A_CLOSE_DOOR, 	0.1, false, true, false);*/
+			
+			factory.addAtomicActivity(Consts.A_ENTERING,      0.5, true  , false , true  );
+			//factory.addAtomicActivity(Consts.A_SITTING,		0.3, false , false , true );
+			factory.addAtomicActivity(Consts.A_LEAVING, 	0.5, false, true, true);
 			
 			factory.addContextAttribute(Consts.C_AT_WORKINGROOM       , 0.6, false, false , true);
 			factory.addContextAttribute(Consts.C_WORKINGROOM_LIGHT_ON , 0.4, false, false , false);

@@ -161,6 +161,12 @@ public class SensorEventSubcriber implements MqttCallback {
 				message.setPayload(payload.getBytes("UTF-8"));
 				mqttClient.publish(Consts.TOPIC_ACTIVITY, message);
 			}
+			
+			// Context = At working room
+			MqttMessage message = new MqttMessage();
+			String payload = Consts.C_AT_WORKINGROOM;
+			message.setPayload(payload.getBytes("UTF-8"));
+			mqttClient.publish(Consts.TOPIC_CONTEXT, message);
 		}
 		
 	}
@@ -177,10 +183,17 @@ public class SensorEventSubcriber implements MqttCallback {
 		}
 	}
 	
-	public void translateSwitchData(String sensorStatus){
+	public void translateSwitchData(String sensorStatus) 
+			throws UnsupportedEncodingException, MqttPersistenceException, MqttException{
 		if (sensorStatus.equalsIgnoreCase("Switch_ON")) {
 			// track lightON start time
 			this.startLightTime = new Date();
+			
+			// Context = workingroom_light_on
+			MqttMessage message = new MqttMessage();
+			String payload = Consts.C_WORKINGROOM_LIGHT_ON;
+			message.setPayload(payload.getBytes("UTF-8"));
+			mqttClient.publish(Consts.TOPIC_CONTEXT, message);
 		} else {
 			// light OFF, store to database
 			if (this.startLightTime != null) {
