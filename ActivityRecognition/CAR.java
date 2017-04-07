@@ -6,40 +6,42 @@ import java.util.Map.Entry;
 import java.util.concurrent.BlockingQueue;
 
 import org.json.JSONObject;
-	/**
-	 * This class represents the Complex Activity Recognition (CAR) algorithm.
-	 * The class takes an event queue as an input 
-	 * <p><b><code>CAR mAlgorithm = new CAR;</br>
-	 * BlockingQueue<JSONObject> mQ = new ArrayBlockingQueue<>();</br>
-	 * mAlgorithm.setmInQ(mQ);</br>
-	 * mAlgorithm.setRunning(true);</br>
-	 * mAlgorithm.start();</br></code></b>
-	 * <p>The input queue contain the atomic activities and contexts attribute in
-	 *  form of a JSON object.
-	 * <p><b><code> {"activity":<"activityName">}</br>
-	 * {"context" :<"contextName">}
-	 * </code></b>
-	 * 
-	 * */
+
+/**
+ * This class represents the Complex Activity Recognition (CAR) algorithm.
+ * The class takes an event queue as an input 
+ * <p><b><code>CAR mAlgorithm = new CAR;</br>
+ * BlockingQueue<JSONObject> mQ = new ArrayBlockingQueue<>();</br>
+ * mAlgorithm.setmInQ(mQ);</br>
+ * mAlgorithm.setRunning(true);</br>
+ * mAlgorithm.start();</br></code></b>
+ * <p>The input queue contain the atomic activities and contexts attribute in
+ *  form of a JSON object.
+ * <p><b><code> {"activity":<"activityName">}</br>
+ * {"context" :<"contextName">}
+ * </code></b>
+ * 
+ * */
+	
 public class CAR extends Thread{
 
-	private JSONObject mEvent;
-	private Situation  mSituation;
-	private BlockingQueue<JSONObject> mInQ;
-	private Hashtable<String, OnGoingCA> mOnGoingCAList = new Hashtable<>();
-	private Hashtable<String, OnGoingCA> mRecognizedCAList = new Hashtable<>();
+	private JSONObject event;
+	private Situation  situation;
+	private BlockingQueue<JSONObject> inQueue;
+	private Hashtable<String, OnGoingCA> onGoingCAList = new Hashtable<>();
+	private Hashtable<String, OnGoingCA> recognizedCAList = new Hashtable<>();
 	private boolean situationChanged = false;
-	private boolean running = false;
+	private boolean isRunning = false;
 	@Override
 	public void run() {
 		System.out.println("Complex Activity Recognition algorithm is running and waiting for new events");
-		while(running){
+		while(isRunning){
 			try{
-				mEvent = mInQ.take();
+				event = inQueue.take();
 				checkCurrentSituation();
 				deleteDeadCA();
-				checkForNewCA(mEvent);
-				passNewEvent(mEvent);
+				checkForNewCA(event);
+				passNewEvent(event);
 				checkIfAnyCAFulfilled();
 			}catch (InterruptedException e) {
 				System.out.println("-----------------INTERRUP-------------------");}	
@@ -47,25 +49,25 @@ public class CAR extends Thread{
 	}
 	/**
 	 * Passes the new event to the current tracked complex activities list
-	 * @param mEvent a JSON object contain an Event
+	 * @param event a JSON object contain an Event
 	 * */
-	private void passNewEvent(JSONObject mEvent){
-		if(mEvent.has(Consts.ACTIVITY)){
-			newAtomicActivity(new AtomicActivity((mEvent.getString(Consts.ACTIVITY))));
-		}else if(mEvent.has(Consts.CONTEXT)){
-			newContextAttribute(new ContextAttribute(mEvent.getString(Consts.CONTEXT)));
+	private void passNewEvent(JSONObject event){
+		if(event.has(Consts.ACTIVITY)){
+			newAtomicActivity(new AtomicActivity((event.getString(Consts.ACTIVITY))));
+		}else if(event.has(Consts.CONTEXT)){
+			newContextAttribute(new ContextAttribute(event.getString(Consts.CONTEXT)));
 		}
 	}
 	/**
 	 * Checks if this event is the start of any complex activity in this situation.
 	 * If it is, adds the new complex activity to the current tracked complex activities
-	 * @param mEvent a JSON object contain an Event
+	 * @param event a JSON object contain an Event
 	 * */
-	private void checkForNewCA(JSONObject mEvent){
-		if(mEvent.has(Consts.ACTIVITY)){
-			checkForNewCAA(new AtomicActivity((mEvent.getString(Consts.ACTIVITY))));
-		}else if(mEvent.has(Consts.CONTEXT)){
-			checkForNewCAC(new ContextAttribute(mEvent.getString(Consts.CONTEXT)));
+	private void checkForNewCA(JSONObject event){
+		if(event.has(Consts.ACTIVITY)){
+			checkForNewCAA(new AtomicActivity((event.getString(Consts.ACTIVITY))));
+		}else if(event.has(Consts.CONTEXT)){
+			checkForNewCAC(new ContextAttribute(event.getString(Consts.CONTEXT)));
 		}
 	}
 	/**
@@ -73,12 +75,12 @@ public class CAR extends Thread{
 	 * If it finds any, delete it. 
 	 * */
 	private void deleteDeadCA(){
-		Iterator<Entry<String, OnGoingCA>> mIterator = mOnGoingCAList.entrySet().iterator();
-		while(mIterator.hasNext()){
-			 OnGoingCA mOnGoingCA = mIterator.next().getValue();
+		Iterator<Entry<String, OnGoingCA>> iterator = onGoingCAList.entrySet().iterator();
+		while(iterator.hasNext()){
+			 OnGoingCA mOnGoingCA = iterator.next().getValue();
 			 if(!mOnGoingCA.isAlive()){
-				 System.out.println("Comlex Activity deleted (Exceded Time Range): "+ mOnGoingCA.getmName());
-				 mIterator.remove(); 
+				 System.out.println("Comlex Activity deleted (Exceded Time Range): "+ mOnGoingCA.getName());
+				 iterator.remove(); 
 			 }
 		}
 	}
@@ -87,38 +89,38 @@ public class CAR extends Thread{
 	 * @param mActicity the atomic activity to be passed
 	 * */
 	private void newAtomicActivity(AtomicActivity mActivity){
-		Iterator<Entry<String, OnGoingCA>> mIterator = mOnGoingCAList.entrySet().iterator();
+		Iterator<Entry<String, OnGoingCA>> mIterator = onGoingCAList.entrySet().iterator();
 		while(mIterator.hasNext()){ 
 			mIterator.next().getValue().newAtomicActivity(mActivity);
 			}
 	}
 	/**
 	 * Passes the new context attribute to the current tracked complex activities list
-	 * @param mContext the context attribute to be passed
+	 * @param context the context attribute to be passed
 	 * */
-	private void newContextAttribute(ContextAttribute mContext){
-		Iterator<Entry<String, OnGoingCA>> mIterator = mOnGoingCAList.entrySet().iterator();
+	private void newContextAttribute(ContextAttribute context){
+		Iterator<Entry<String, OnGoingCA>> mIterator = onGoingCAList.entrySet().iterator();
 		while(mIterator.hasNext()){	
-			mIterator.next().getValue().newContextAttribute(mContext);
+			mIterator.next().getValue().newContextAttribute(context);
 			}
 	}
 	/**
 	 * Checks for the current situation and sets it.
 	 * */
 	private void checkCurrentSituation(){
-		mSituation = CAFactory.atMeetingRoom();
+		situation = CAFactory.atMeetingRoom();
 		if(situationChanged){deleteNonSituationCA();}
 	}
 	/**
 	 * Checks if this atomic activity is the start of any complex activity in this situation.
 	 * If it is, adds the new complex activity to the current tracked complex activities
-	 * @param mActivity an atomic activity object
+	 * @param activity an atomic activity object
 	 * */
-	private void checkForNewCAA(AtomicActivity mActivity){
-		Iterator<Entry<String, ComplexActivity>> mSituationCAListIterator = mSituation.getmCAList().entrySet().iterator();
+	private void checkForNewCAA(AtomicActivity activity){
+		Iterator<Entry<String, ComplexActivity>> mSituationCAListIterator = situation.getmCAList().entrySet().iterator();
 		while(mSituationCAListIterator.hasNext()){
 			ComplexActivity mSituationCA = mSituationCAListIterator.next().getValue();
-			if(mSituationCA.isStartAtomicActivity(mActivity) && !mOnGoingCAList.containsKey(mSituationCA.getmName())){
+			if(mSituationCA.isStartAtomicActivity(activity) && !onGoingCAList.containsKey(mSituationCA.getName())){
 				addComplexActivitytoOngoingCALisht(mSituationCA);
 			}
 		}
@@ -126,14 +128,14 @@ public class CAR extends Thread{
 	/**
 	 * Checks if this context attribute is the start of any complex activity in this situation.
 	 * If it is, adds the new complex activity to the current tracked complex activities
-	 * @param mContext a context attribute object
+	 * @param context a context attribute object
 	 * */
-	private void checkForNewCAC(ContextAttribute mContext){
-		Iterator<Entry<String, ComplexActivity>> mSituationCAListIterator = mSituation.getmCAList().entrySet().iterator();
-		while(mSituationCAListIterator.hasNext()){
-			ComplexActivity mSituationCA = mSituationCAListIterator.next().getValue();
-			if(mSituationCA.isStartContextAttribute(mContext) && !mOnGoingCAList.containsKey(mSituationCA.getmName())){
-				addComplexActivitytoOngoingCALisht(mSituationCA);
+	private void checkForNewCAC(ContextAttribute context){
+		Iterator<Entry<String, ComplexActivity>> situationCAListIterator = situation.getmCAList().entrySet().iterator();
+		while(situationCAListIterator.hasNext()){
+			ComplexActivity situationCA = situationCAListIterator.next().getValue();
+			if(situationCA.isStartContextAttribute(context) && !onGoingCAList.containsKey(situationCA.getName())){
+				addComplexActivitytoOngoingCALisht(situationCA);
 			}
 		}
 	}
@@ -141,9 +143,9 @@ public class CAR extends Thread{
 	 * Adds a complex activity to the tracked complex activities list
 	 * @param a complex activity object
 	 * */
-	private void addComplexActivitytoOngoingCALisht(ComplexActivity mCA){
-		mOnGoingCAList.put(mCA.getmName(),new OnGoingCA(mCA));
-		System.out.println("Detected a biggining of a Complex Activity :" + mCA.getmName());
+	private void addComplexActivitytoOngoingCALisht(ComplexActivity complexActivity){
+		onGoingCAList.put(complexActivity.getName(),new OnGoingCA(complexActivity));
+		System.out.println("Detected beginning of a Complex Activity :" + complexActivity.getName());
 		
 		/* 
 		 * Track start time of the activity!!!
@@ -154,17 +156,17 @@ public class CAR extends Thread{
 	 * If so, print its name and remove it from the list
 	 * */
 	private void checkIfAnyCAFulfilled(){
-		Iterator<Entry<String, OnGoingCA>> mIterator = mOnGoingCAList.entrySet().iterator();
+		Iterator<Entry<String, OnGoingCA>> mIterator = onGoingCAList.entrySet().iterator();
 		while(mIterator.hasNext()){
 			OnGoingCA mOnGoingCA = mIterator.next().getValue();
 			if(mOnGoingCA.fulfilled()){
 				// Start time and End Time
 				SimpleDateFormat sdf = new SimpleDateFormat("MMM dd,yyyy HH:mm");
-				Date resultdate = new Date(mOnGoingCA.getmStartTime());
+				Date resultdate = new Date(mOnGoingCA.getStartTime());
 				
 				System.out.println("--------- Complex Activity fulfilled and removed --------- ");
-				System.out.println("Name       :" + mOnGoingCA.getmCA().getmName());
-				System.out.println("Wieght     :" + mOnGoingCA.getmWieght());
+				System.out.println("Name       :" + mOnGoingCA.getComplexActivity().getName());
+				System.out.println("Wieght     :" + mOnGoingCA.getWieght());
 				System.out.println("Start time :" + sdf.format(resultdate));
 				resultdate = new Date(System.currentTimeMillis());
 				System.out.println("End time   :" + sdf.format(resultdate));
@@ -184,21 +186,21 @@ public class CAR extends Thread{
 	 * complex activity that doesn't belong to the current situation and delete it.
 	 * */
 	private void deleteNonSituationCA(){
-		Iterator<Entry<String, OnGoingCA>> mIterator = mOnGoingCAList.entrySet().iterator();
+		Iterator<Entry<String, OnGoingCA>> mIterator = onGoingCAList.entrySet().iterator();
 		while(mIterator.hasNext()){
-			if(!mSituation.getmCAList().containsKey(mIterator.next().getValue().getmName())){
+			if(!situation.getmCAList().containsKey(mIterator.next().getValue().getName())){
 				mIterator.remove();
 			}
 		}
 	}
-	public void setRunning(boolean running){
-		this.running = running;
-		if(!running){this.interrupt();}
+	public void setRunning(boolean isRunning){
+		this.isRunning = isRunning;
+		if(!isRunning){this.interrupt();}
 	}
 	/**
 	 * Sets the input queue to the algorithm
 	 * */
-	public void setmInQ(BlockingQueue<JSONObject> mInQ) {
-		this.mInQ = mInQ;
+	public void setmInQ(BlockingQueue<JSONObject> inQueue) {
+		this.inQueue = inQueue;
 	}
 }

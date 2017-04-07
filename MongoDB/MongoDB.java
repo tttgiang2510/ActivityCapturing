@@ -22,11 +22,11 @@ public class MongoDB {
 		
 		String databaseName = "Events";
 		String collectionName = "SensorEvents";
-		SensorEventSubcriber subcriber = new SensorEventSubcriber(Consts.LOCALHOST,
+/*		SensorEventSubcriber subcriber = new SensorEventSubcriber(Consts.LOCALHOST,
 				"ID_GIANG", subcriberTopics, databaseName, collectionName);
 
 		subcriber	.setRunning(true);
 		//subcriber				.start();
-	}
+*/	}
 
 }

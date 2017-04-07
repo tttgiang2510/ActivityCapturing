@@ -17,7 +17,7 @@ public class Situation {
 	 * @param mComplexActivity the Complex Activity to be added
 	 * */
 	public void addComplexActivity(ComplexActivity mComplexActivity){
-		mCA.put(mComplexActivity.getmName(), mComplexActivity);
+		mCA.put(mComplexActivity.getName(), mComplexActivity);
 	}
 	/**
 	 * @return Hashtable contains this situation Complex Activity list

@@ -30,7 +30,7 @@ public class ContextAttribute {
 	/**
 	 * @return the Context Attribute name
 	 * */
-	public String getmName() {
+	public String getName() {
 		return mName;
 	}
 	/**
@@ -44,7 +44,7 @@ public class ContextAttribute {
 	 * Returns the Context Attribute weight.
 	 * @return a double value between 0 and 1
 	 * */
-	public double getmWeight() {
+	public double getWeight() {
 		return mWeight;
 	}
 	/**

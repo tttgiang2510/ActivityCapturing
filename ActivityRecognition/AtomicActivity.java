@@ -1,54 +1,54 @@
 /**
- * This class represents an atomic activity. Each atomic activity has a name and a
- * weight. The weight represent importance of the atomic activity when included in 
- * a complex activity.
+ * This class represents an atomic activity. 
+ * Each atomic activity has a name and a weight. 
+ * The weight represent importance of the atomic activity when included in a CA
  * <p> To instantiate :
  * <p><b><code>AtomicActivity mActivity = new AtomicActivity(String mName, double mWeight);</code></b>
  * */
 public class AtomicActivity {
 	
-	private String mName;
-	private double mWeight;
+	private String name;
+	private double weight;
 	/**
 	 * Creates an Atomic Activity object with the given name
-	 * @param mName the Atomic Activity name.
+	 * @param name the Atomic Activity name.
 	 * */
-	public AtomicActivity(String mName){
-		this.mName = mName;
+	public AtomicActivity(String name){
+		this.name = name;
 	}
 	/**
 	 * Creates an Atomic Activity object with the given name/weight
-	 * @param mName the Atomic Activity name.
-	 * @param mWeight the Atomic Activity weight. 
+	 * @param name the Atomic Activity name.
+	 * @param weight the Atomic Activity weight. 
 	 * */
-	public AtomicActivity(String mName , double mWeight){
-		this.mName		= mName;
-		this.mWeight	= mWeight;
+	public AtomicActivity(String name , double weight){
+		this.name		= name;
+		this.weight	= weight;
 	}
 	/**
 	 * @return the Atomic Activity name
 	 * */
-	public String getmName() {
-		return mName;
+	public String getName() {
+		return name;
 	}
 	/**
 	 * Sets the Atomic Activity name
 	 * */
-	public void setmName(String mName) {
-		this.mName = mName;
+	public void setName(String name) {
+		this.name = name;
 	}
 	/**
 	 * Returns the Atomic Activity weight.
 	 * @return a double value between 0 and 1
 	 * */
-	public double getmWeight() {
-		return mWeight;
+	public double getWeight() {
+		return weight;
 	}
 	/**
 	 * Sets the Atomic Activity weight.
-	 * @param mWeight a double value between 0 and 1
+	 * @param weight a double value between 0 and 1
 	 * */
-	public void setmWeight(double mWeight) {
-		this.mWeight = mWeight;
+	public void setWeight(double weight) {
+		this.weight = weight;
 	}
 }

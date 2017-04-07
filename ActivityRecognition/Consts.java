@@ -3,6 +3,8 @@ public class Consts {
 	private Consts(){}
 	
 	// Atomic Activities A_
+	public static final String A_ENTERING				= "entering";
+	public static final String A_LEAVING				= "leaving";
 	public static final String A_OPEN_DOOR				= "open_door";
 	public static final String A_CLOSE_DOOR				= "close_door";
 	public static final String A_SITTING                = "sitting";
@@ -49,4 +51,13 @@ public class Consts {
 	public static final String TOPIC_MOTION        		= "motion";
 	public static final String TOPIC_SWITCH        		= "switch";
 	public static final String TOPIC_TWILIGHT        	= "twilight";
+	
+	// MongoDB
+	public static final String DATABASE_NAME 			= "ActivityCapturing";
+	public static final String COLLECTION_ACTIVITIES 	= "Activities";
+	public static final String COLLECTION_SENSOR_EVENTS = "SensorEvents";
+	public static final String MONGO_CLIENT_URI			= "mongodb://127.0.0.1:27017";
+	
+	// Date format
+	public static final String DATE_FORMAT 				= "MMM dd,yyyy HH:mm";
 }
