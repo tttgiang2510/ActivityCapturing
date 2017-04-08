@@ -6,6 +6,7 @@ import java.util.Date;
 import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken;
 import org.eclipse.paho.client.mqttv3.MqttCallback;
 import org.eclipse.paho.client.mqttv3.MqttClient;
+import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
 import org.eclipse.paho.client.mqttv3.MqttException;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
 import org.eclipse.paho.client.mqttv3.MqttPersistenceException;
@@ -65,6 +66,8 @@ public class SensorEventSubcriber implements MqttCallback {
 			subcriberTopics[3] = Consts.TOPIC_SWITCH;
 			subcriberTopics[4] = Consts.TOPIC_TWILIGHT;
 			
+			MqttConnectOptions options = new MqttConnectOptions();
+
 	        mqttClient = new MqttClient("tcp://127.0.0.1:1883", "SensorEventSubcriber");
 	        mqttClient.connect();
 	        mqttClient.setCallback(this);
