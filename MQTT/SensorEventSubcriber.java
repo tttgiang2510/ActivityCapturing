@@ -66,12 +66,12 @@ public class SensorEventSubcriber implements MqttCallback {
 			subcriberTopics[3] = Consts.TOPIC_SWITCH;
 			subcriberTopics[4] = Consts.TOPIC_TWILIGHT;
 			
-			MqttConnectOptions options = new MqttConnectOptions();
+			int[] qos = {2, 2, 2, 2, 2};
 
 	        mqttClient = new MqttClient("tcp://127.0.0.1:1883", "SensorEventSubcriber");
 	        mqttClient.connect();
 	        mqttClient.setCallback(this);
-	        mqttClient.subscribe(subcriberTopics);
+	        mqttClient.subscribe(subcriberTopics, qos);
 	    } catch (MqttException e) {
 	        e.printStackTrace();
 	    }
@@ -119,17 +119,55 @@ public class SensorEventSubcriber implements MqttCallback {
 		 * GetOut = (Door Sensor = CLOSED & Motion Sensor = OFF)
 		 * Working = Motion Sensor = ON for long period of time 
 		 * */
+		String sensorStatus = receivedMessage;
 		switch (topic) {
 			case "motion":
-				translateMotionData(receivedMessage);
+				
+				System.out.println("--------------------This is motion");
+				//translateMotionData(receivedMessage);
+				if (sensorStatus.equalsIgnoreCase("Motion_OFF")) {
+					if (this.doorActivated && this.doorClosed) {
+						// leaving the room 
+						// send topic = activity & message = leaving
+						MqttMessage setmessage = new MqttMessage();
+						String setpayload = Consts.A_LEAVING;
+						setmessage.setPayload(setpayload.getBytes("UTF-8"));
+						mqttClient.publish(Consts.TOPIC_ACTIVITY, setmessage);
+						
+						System.out.println("-------send leaving");
+					}
+				} else {	// motion ON
+					System.out.println("here...........ONNNN");
+					this.motionOn = true;
+					if (this.doorActivated) {
+						// entering the room
+						// send topic = activity & message = entering
+						MqttMessage setmessage = new MqttMessage();
+						String setpayload = Consts.A_ENTERING;
+						setmessage.setPayload(setpayload.getBytes("UTF-8"));
+						mqttClient.publish(Consts.TOPIC_ACTIVITY, setmessage);
+						
+						System.out.println("------send entering");
+					}
+					
+					// Context = At working room
+					MqttMessage setmessage = new MqttMessage();
+					String setpayload = Consts.C_AT_WORKINGROOM;
+					setmessage.setPayload(setpayload.getBytes("UTF-8"));
+					mqttClient.publish(Consts.TOPIC_CONTEXT, setmessage);
+					System.out.println("-----send context");
+				}
 				break;
 			case "door":
+				System.out.println("--------------------This is door");
 				translateDoorData(receivedMessage);
 				break;
 			case "switch":
+				System.out.println("--------------------This is switch");
 				translateSwitchData(receivedMessage);
 				break;
 			default:
+				System.out.println("--------------------This is window");
 				translateWindowData(receivedMessage);
 				break;
 		}
@@ -145,6 +183,7 @@ public class SensorEventSubcriber implements MqttCallback {
 	public void translateMotionData(String sensorStatus) 
 			throws UnsupportedEncodingException, MqttPersistenceException, 
 			MqttException {
+		System.out.println("here...........");
 		if (sensorStatus.equalsIgnoreCase("Motion_OFF")) {
 			if (this.doorActivated && this.doorClosed) {
 				// leaving the room 
@@ -153,8 +192,11 @@ public class SensorEventSubcriber implements MqttCallback {
 				String payload = Consts.A_LEAVING;
 				message.setPayload(payload.getBytes("UTF-8"));
 				mqttClient.publish(Consts.TOPIC_ACTIVITY, message);
+				
+				System.out.println("-------send leaving");
 			}
 		} else {	// motion ON
+			System.out.println("here...........ONNNN");
 			this.motionOn = true;
 			if (this.doorActivated) {
 				// entering the room
@@ -163,6 +205,8 @@ public class SensorEventSubcriber implements MqttCallback {
 				String payload = Consts.A_ENTERING;
 				message.setPayload(payload.getBytes("UTF-8"));
 				mqttClient.publish(Consts.TOPIC_ACTIVITY, message);
+				
+				System.out.println("------send entering");
 			}
 			
 			// Context = At working room
@@ -170,6 +214,7 @@ public class SensorEventSubcriber implements MqttCallback {
 			String payload = Consts.C_AT_WORKINGROOM;
 			message.setPayload(payload.getBytes("UTF-8"));
 			mqttClient.publish(Consts.TOPIC_CONTEXT, message);
+			System.out.println("-----send context");
 		}
 		
 	}
