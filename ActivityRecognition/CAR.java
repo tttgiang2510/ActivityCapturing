@@ -1,11 +1,20 @@
+import java.net.UnknownHostException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Hashtable;
 import java.util.Iterator;
+import java.util.Vector;
 import java.util.Map.Entry;
 import java.util.concurrent.BlockingQueue;
 
 import org.json.JSONObject;
+
+import com.mongodb.BasicDBObject;
+import com.mongodb.DB;
+import com.mongodb.DBCollection;
+import com.mongodb.DBObject;
+import com.mongodb.MongoClient;
+import com.mongodb.MongoClientURI;
 
 /**
  * This class represents the Complex Activity Recognition (CAR) algorithm.
@@ -32,8 +41,33 @@ public class CAR extends Thread{
 	private Hashtable<String, OnGoingCA> recognizedCAList = new Hashtable<>();
 	private boolean situationChanged = false;
 	private boolean isRunning = false;
+	
+	// MongoDB
+	MongoClient mongoClient 		= null;
+	DB database 					= null; 
+	DBCollection collection 		= null;
+	
+	public CAR() {
+	}
+	
+	public CAR(MongoClient mongoClient) {
+		this.mongoClient = mongoClient;
+	}
+	
 	@Override
 	public void run() {
+		// Connect to database
+    	if (this.mongoClient == null) {
+    		try {
+				this.mongoClient = new MongoClient(new MongoClientURI(Consts.MONGO_CLIENT_URI));
+			} catch (UnknownHostException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+    	}
+    	this.database = mongoClient.getDB(Consts.DATABASE_NAME);
+    	this.collection = database.getCollection(Consts.COLLECTION_ACTIVITIES);
+    	
 		System.out.println("Complex Activity Recognition algorithm is running and waiting for new events");
 		while(isRunning){
 			try{
@@ -108,7 +142,7 @@ public class CAR extends Thread{
 	 * Checks for the current situation and sets it.
 	 * */
 	private void checkCurrentSituation(){
-		situation = CAFactory.atMeetingRoom();
+		situation = CAFactory.atWorkingRoom();
 		if(situationChanged){deleteNonSituationCA();}
 	}
 	/**
@@ -160,16 +194,37 @@ public class CAR extends Thread{
 		while(mIterator.hasNext()){
 			OnGoingCA mOnGoingCA = mIterator.next().getValue();
 			if(mOnGoingCA.fulfilled()){
-				// Start time and End Time
-				SimpleDateFormat sdf = new SimpleDateFormat("MMM dd,yyyy HH:mm");
-				Date resultdate = new Date(mOnGoingCA.getStartTime());
+				// get End Time
+				Date endTime = new Date();
+			
+				SimpleDateFormat sdf = new SimpleDateFormat(Consts.DATE_FORMAT);
+				
 				
 				System.out.println("--------- Complex Activity fulfilled and removed --------- ");
-				System.out.println("Name       :" + mOnGoingCA.getComplexActivity().getName());
+/*				System.out.println("Name       :" + mOnGoingCA.getComplexActivity().getName());
 				System.out.println("Wieght     :" + mOnGoingCA.getWieght());
 				System.out.println("Start time :" + sdf.format(resultdate));
 				resultdate = new Date(System.currentTimeMillis());
-				System.out.println("End time   :" + sdf.format(resultdate));
+				System.out.println("End time   :" + sdf.format(resultdate));*/
+				
+				// Save activity event to database 
+				DBObject object = new BasicDBObject("room", "7615.1")
+											.append("activity", mOnGoingCA.getComplexActivity().getName())
+											.append("startTime", sdf.format(mOnGoingCA.getStartTime()))
+											.append("endTime", sdf.format(endTime));
+				DBCollection activityCollection = database.getCollection(Consts.COLLECTION_ACTIVITIES);
+				activityCollection.insert(object);
+				
+				// gui & log
+				Vector<Object> row = new Vector<Object>();
+				row.add("7615.1");
+				row.add(mOnGoingCA.getComplexActivity().getName());
+				row.add(sdf.format(mOnGoingCA.getStartTime()));
+				row.add(sdf.format(endTime));
+				Main.gui.addTableRow(row);
+				
+				System.out.println("---Inserted into DB: " + object);
+				
 				
 				mIterator.remove();
 				

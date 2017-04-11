@@ -2,14 +2,17 @@ import java.io.UnsupportedEncodingException;
 import java.net.UnknownHostException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.Vector;
 
 import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken;
 import org.eclipse.paho.client.mqttv3.MqttCallback;
 import org.eclipse.paho.client.mqttv3.MqttClient;
 import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
+import org.eclipse.paho.client.mqttv3.MqttDeliveryToken;
 import org.eclipse.paho.client.mqttv3.MqttException;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
 import org.eclipse.paho.client.mqttv3.MqttPersistenceException;
+import org.eclipse.paho.client.mqttv3.MqttTopic;
 
 import com.mongodb.BasicDBObject;
 import com.mongodb.DB;
@@ -35,29 +38,30 @@ public class SensorEventSubcriber implements MqttCallback {
 	private long motionTimeCounter;
 	private Date startLightTime = null;
 	private Date startOpenedWindowTime = null;
-	private boolean doorActivated = false;	// either CLOSED or OPEN;
+	
+	// doorActivated = true if door is recently CLOSED/OPEN
+	private boolean doorActivated = false;	
 	private boolean doorClosed = false;
-	private boolean motionOn = false;
+	
+	// flag motion_OFF to check user availability in case user is not moving
+	private boolean motionOff = false;
 
 	public SensorEventSubcriber() {
 	}
-
-	public static void main(String[] args) {
-	    try {
-			new SensorEventSubcriber().run();
-		} catch (UnknownHostException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+	
+	public SensorEventSubcriber(MongoClient mongoClient) {
+		this.mongoClient = mongoClient;
 	}
 
 	public void run() throws UnknownHostException {
 	    try {
 	    	
 	    	// Connect to database
-	    	mongoClient = new MongoClient(new MongoClientURI(Consts.MONGO_CLIENT_URI));
-	    	database = mongoClient.getDB(Consts.DATABASE_NAME);
-	    	collection = database.getCollection(Consts.COLLECTION_SENSOR_EVENTS);
+	    	if (this.mongoClient == null) {
+	    		this.mongoClient = new MongoClient(new MongoClientURI(Consts.MONGO_CLIENT_URI));
+	    	}
+	    	this.database = mongoClient.getDB(Consts.DATABASE_NAME);
+	    	this.collection = database.getCollection(Consts.COLLECTION_SENSOR_EVENTS);
 	    	
 			this.subcriberTopics = new String[5];
 			subcriberTopics[0] = Consts.TOPIC_DOOR;
@@ -95,13 +99,21 @@ public class SensorEventSubcriber implements MqttCallback {
 
 	@Override
 	public void messageArrived(String topic, MqttMessage message) throws Exception {
-		// time out for doorActivated
-		if (this.doorTimeCounter > System.currentTimeMillis()) {
-			this.doorActivated = false;
-		}
 		// Date format
 		SimpleDateFormat sdf = new SimpleDateFormat(Consts.DATE_FORMAT);
 		Date timestamp = new Date();
+				
+		// time out for doorActivated
+		System.out.println("---" + sdf.format(System.currentTimeMillis()) 
+				+ " - doorActivated = " + this.doorActivated 
+				+ " till : " + sdf.format(this.doorTimeCounter));
+		System.out.println("---:::" + sdf.format(System.currentTimeMillis()) 
+		+ " - doorClosed = " + this.doorClosed);
+		if (System.currentTimeMillis() > this.doorTimeCounter) {
+			this.doorActivated = false;
+		}
+		
+		
 		byte[] payload = message.getPayload();
 		String receivedMessage = new String(payload, "UTF-8");
 		
@@ -111,7 +123,8 @@ public class SensorEventSubcriber implements MqttCallback {
 									.append("status", receivedMessage);
 		collection.insert(object);
 		
-		System.out.println("--Inserted: " + object); 
+		//System.out.println("--Inserted: " + object); 
+		Main.gui.fillEventLog("--" + object + "\n");
 		
 		/* *
 		 * Translate sensor data into activity and context events
@@ -119,55 +132,17 @@ public class SensorEventSubcriber implements MqttCallback {
 		 * GetOut = (Door Sensor = CLOSED & Motion Sensor = OFF)
 		 * Working = Motion Sensor = ON for long period of time 
 		 * */
-		String sensorStatus = receivedMessage;
 		switch (topic) {
 			case "motion":
-				
-				System.out.println("--------------------This is motion");
-				//translateMotionData(receivedMessage);
-				if (sensorStatus.equalsIgnoreCase("Motion_OFF")) {
-					if (this.doorActivated && this.doorClosed) {
-						// leaving the room 
-						// send topic = activity & message = leaving
-						MqttMessage setmessage = new MqttMessage();
-						String setpayload = Consts.A_LEAVING;
-						setmessage.setPayload(setpayload.getBytes("UTF-8"));
-						mqttClient.publish(Consts.TOPIC_ACTIVITY, setmessage);
-						
-						System.out.println("-------send leaving");
-					}
-				} else {	// motion ON
-					System.out.println("here...........ONNNN");
-					this.motionOn = true;
-					if (this.doorActivated) {
-						// entering the room
-						// send topic = activity & message = entering
-						MqttMessage setmessage = new MqttMessage();
-						String setpayload = Consts.A_ENTERING;
-						setmessage.setPayload(setpayload.getBytes("UTF-8"));
-						mqttClient.publish(Consts.TOPIC_ACTIVITY, setmessage);
-						
-						System.out.println("------send entering");
-					}
-					
-					// Context = At working room
-					MqttMessage setmessage = new MqttMessage();
-					String setpayload = Consts.C_AT_WORKINGROOM;
-					setmessage.setPayload(setpayload.getBytes("UTF-8"));
-					mqttClient.publish(Consts.TOPIC_CONTEXT, setmessage);
-					System.out.println("-----send context");
-				}
+				translateMotionData(receivedMessage);
 				break;
 			case "door":
-				System.out.println("--------------------This is door");
 				translateDoorData(receivedMessage);
 				break;
 			case "switch":
-				System.out.println("--------------------This is switch");
 				translateSwitchData(receivedMessage);
 				break;
 			default:
-				System.out.println("--------------------This is window");
 				translateWindowData(receivedMessage);
 				break;
 		}
@@ -183,46 +158,53 @@ public class SensorEventSubcriber implements MqttCallback {
 	public void translateMotionData(String sensorStatus) 
 			throws UnsupportedEncodingException, MqttPersistenceException, 
 			MqttException {
-		System.out.println("here...........");
 		if (sensorStatus.equalsIgnoreCase("Motion_OFF")) {
+			this.motionOff = true;
 			if (this.doorActivated && this.doorClosed) {
-				// leaving the room 
-				// send topic = activity & message = leaving
-				MqttMessage message = new MqttMessage();
-				String payload = Consts.A_LEAVING;
-				message.setPayload(payload.getBytes("UTF-8"));
-				mqttClient.publish(Consts.TOPIC_ACTIVITY, message);
+				/*
+				 * wait for 1.5 min
+				 * motionOff still = true means no one in the room
+				 * publish activity = leaving
+				 * */
+				Thread publish = new Thread() {
+					public void run() {
+						// Sleep 70000ms (~1.2min)
+						try {
+							Thread.sleep(70000);
+						} catch (InterruptedException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}
+						if (isMotionOff()) {
+							publishAMessage(Consts.TOPIC_ACTIVITY, Consts.A_LEAVING);
+						}
+					}
+				};
+				publish.start();
 				
-				System.out.println("-------send leaving");
+				/*if (this.motionOffCounter >= Consts.MOTION_SENSOR_THRESHOLD) {
+					// leaving the room 
+					publishAMessage(Consts.TOPIC_ACTIVITY, Consts.A_LEAVING);
+					this.motionOffCounter = 0;
+				}*/
 			}
 		} else {	// motion ON
-			System.out.println("here...........ONNNN");
-			this.motionOn = true;
+			this.motionOff = false;
 			if (this.doorActivated) {
 				// entering the room
-				// send topic = activity & message = entering
-				MqttMessage message = new MqttMessage();
-				String payload = Consts.A_ENTERING;
-				message.setPayload(payload.getBytes("UTF-8"));
-				mqttClient.publish(Consts.TOPIC_ACTIVITY, message);
-				
-				System.out.println("------send entering");
+				publishAMessage(Consts.TOPIC_ACTIVITY, Consts.A_ENTERING);
 			}
 			
 			// Context = At working room
-			MqttMessage message = new MqttMessage();
-			String payload = Consts.C_AT_WORKINGROOM;
-			message.setPayload(payload.getBytes("UTF-8"));
-			mqttClient.publish(Consts.TOPIC_CONTEXT, message);
-			System.out.println("-----send context");
+			publishAMessage(Consts.TOPIC_CONTEXT, Consts.C_AT_WORKINGROOM);
 		}
 		
 	}
 	
 	public void translateDoorData(String sensorStatus) {
 		this.doorActivated = true;
-		// set time out for doorActivated = 1 min
-		this.doorTimeCounter = System.currentTimeMillis() + 1000;
+		// set time out for doorActivated = 3 mins
+		this.doorTimeCounter = System.currentTimeMillis() + 180000;
 		
 		if (sensorStatus.equalsIgnoreCase("Door_CLOSED")) {
 			this.doorClosed = true;
@@ -238,13 +220,11 @@ public class SensorEventSubcriber implements MqttCallback {
 			this.startLightTime = new Date();
 			
 			// Context = workingroom_light_on
-			MqttMessage message = new MqttMessage();
-			String payload = Consts.C_WORKINGROOM_LIGHT_ON;
-			message.setPayload(payload.getBytes("UTF-8"));
-			mqttClient.publish(Consts.TOPIC_CONTEXT, message);
+			publishAMessage(Consts.TOPIC_CONTEXT, Consts.C_WORKINGROOM_LIGHT_ON);
 		} else {
 			// light OFF, store to database
 			if (this.startLightTime != null) {
+				Date endLightTime = new Date();
 				
 				// Date format
 				SimpleDateFormat sdf = new SimpleDateFormat(Consts.DATE_FORMAT);
@@ -253,12 +233,21 @@ public class SensorEventSubcriber implements MqttCallback {
 				DBObject object = new BasicDBObject("room", "7615.1")
 											.append("activity", "leavingLightON")
 											.append("startTime", sdf.format(this.startLightTime))
-											.append("endTime", sdf.format(new Date()));
+											.append("endTime", sdf.format(endLightTime));
 				DBCollection activityCollection = database.getCollection(Consts.COLLECTION_ACTIVITIES);
 				activityCollection.insert(object);
 				
 				// release time tracking for light
 				this.startLightTime = null;
+				
+				// gui & log
+				Vector<Object> row = new Vector<Object>();
+				row.add("7615.1");
+				row.add("leavingLightON");
+				row.add(sdf.format(this.startLightTime));
+				row.add(sdf.format(endLightTime));
+				Main.gui.addTableRow(row);
+				
 				System.out.println("--Inserted into " + Consts.COLLECTION_ACTIVITIES + " : " + object); 
 			}
 		}
@@ -269,22 +258,51 @@ public class SensorEventSubcriber implements MqttCallback {
 			this.startOpenedWindowTime = new Date();
 		} else {
 			if (this.startOpenedWindowTime != null) {
+				Date endOpenedWindowTime = new Date();
+				
 				// Date format
 				SimpleDateFormat sdf = new SimpleDateFormat(Consts.DATE_FORMAT);
 				
-				// Save sensor event to database 
+				// Save activity event to database 
 				DBObject object = new BasicDBObject("room", "7615.1")
 											.append("activity", "leavingWindowOPEN")
 											.append("startTime", sdf.format(this.startOpenedWindowTime))
-											.append("endTime", sdf.format(new Date()));
+											.append("endTime", sdf.format(endOpenedWindowTime));
 				DBCollection activityCollection = database.getCollection(Consts.COLLECTION_ACTIVITIES);
 				activityCollection.insert(object);
 				
 				// release time tracking for light
 				this.startOpenedWindowTime = null;
+				
+				// gui & log
+				Vector<Object> row = new Vector<Object>();
+				row.add("7615.1");
+				row.add("leavingWindowOPEN");
+				row.add(sdf.format(this.startOpenedWindowTime));
+				row.add(sdf.format(endOpenedWindowTime));
+				Main.gui.addTableRow(row);
+				
 				System.out.println("--Inserted into " + Consts.COLLECTION_ACTIVITIES + " : " + object); 
 			}
 		}
+	}
+	
+	public void publishAMessage(String topic, String message) {
+		MqttDeliveryToken token;
+		MqttTopic mqttTopic = mqttClient.getTopic(topic);
+		try {
+			token = mqttTopic.publish(message.getBytes(), 2, false);
+		} catch (MqttPersistenceException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (MqttException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+	
+	public boolean isMotionOff() {
+		return this.motionOff;
 	}
 
 }

@@ -14,7 +14,7 @@ public class CAFactory {
 
 	public static ComplexActivity workingInARoom(){
 		if(workingInARoom == null){
-			CAFactory factory = new CAFactory(Consts.CA_WORKING_IN_ROOM, 10800, 0.6);
+			CAFactory factory = new CAFactory(Consts.CA_WORKING_IN_ROOM, 14400, 0.6);
 			
 /*			factory.addAtomicActivity(Consts.A_OPEN_DOOR,      0.1, true  , false , true  );
 			factory.addAtomicActivity(Consts.A_CLOSE_DOOR,    	0.1, false , false , false );

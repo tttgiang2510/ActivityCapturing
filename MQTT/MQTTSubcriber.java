@@ -14,7 +14,7 @@ public class MQTTSubcriber extends Thread implements MqttCallback  {
 	
 	private String mHostname = null;
 	private String mClientId = null;
-	private String[] mSubcribeTopic = null;
+	private String[] mSubcribeTopics = null;
 	private boolean isRunning = false;
 	
 	private BlockingQueue<JSONObject> mOutQueue      = new ArrayBlockingQueue<>(100);  
@@ -25,10 +25,10 @@ public class MQTTSubcriber extends Thread implements MqttCallback  {
 	public MQTTSubcriber () {
 	}
 	
-	public MQTTSubcriber(String hostname, String clientId, String[] subcribeTopic) {
+	public MQTTSubcriber(String hostname, String clientId, String[] subcribeTopics) {
 		this.mHostname = hostname;
 		this.mClientId = clientId; 
-		this.mSubcribeTopic = subcribeTopic;
+		this.mSubcribeTopics = subcribeTopics;
 	}
 	
 	public void setRunning(boolean isRunning){
@@ -46,7 +46,7 @@ public class MQTTSubcriber extends Thread implements MqttCallback  {
 			client = new MqttClient(connect, mClientId);
 			client.connect();
 			client.setCallback(this);
-			client.subscribe(mSubcribeTopic);
+			client.subscribe(mSubcribeTopics);
 			while(isRunning) {
 				
 				JSONObject message = new JSONObject();
@@ -91,7 +91,7 @@ public class MQTTSubcriber extends Thread implements MqttCallback  {
 			try {
 				client.connect();
 				client.setCallback(this);
-				client.subscribe(mSubcribeTopic);
+				client.subscribe(mSubcribeTopics);
 			} catch (MqttException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();

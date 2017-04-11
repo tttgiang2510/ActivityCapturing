@@ -60,4 +60,9 @@ public class Consts {
 	
 	// Date format
 	public static final String DATE_FORMAT 				= "MMM dd,yyyy HH:mm";
+	
+	// Sensor data translator
+	public static final int MOTION_SENSOR_THRESHOLD		= 2;
+	
+	
 }
