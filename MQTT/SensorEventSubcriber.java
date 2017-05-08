@@ -237,9 +237,6 @@ public class SensorEventSubcriber implements MqttCallback {
 				DBCollection activityCollection = database.getCollection(Consts.COLLECTION_ACTIVITIES);
 				activityCollection.insert(object);
 				
-				// release time tracking for light
-				this.startLightTime = null;
-				
 				// gui & log
 				Vector<Object> row = new Vector<Object>();
 				row.add("7615.1");
@@ -249,13 +246,18 @@ public class SensorEventSubcriber implements MqttCallback {
 				Main.gui.addTableRow(row);
 				
 				System.out.println("--Inserted into " + Consts.COLLECTION_ACTIVITIES + " : " + object); 
+				
+				// release time tracking for light
+				this.startLightTime = null;
 			}
 		}
 	}
 	
 	public void translateWindowData(String sensorStatus) {
 		if (sensorStatus.equalsIgnoreCase("Window_OPEN")) {
-			this.startOpenedWindowTime = new Date();
+			if (this.startOpenedWindowTime == null) {
+				this.startOpenedWindowTime = new Date();
+			}
 		} else {
 			if (this.startOpenedWindowTime != null) {
 				Date endOpenedWindowTime = new Date();
@@ -271,9 +273,6 @@ public class SensorEventSubcriber implements MqttCallback {
 				DBCollection activityCollection = database.getCollection(Consts.COLLECTION_ACTIVITIES);
 				activityCollection.insert(object);
 				
-				// release time tracking for light
-				this.startOpenedWindowTime = null;
-				
 				// gui & log
 				Vector<Object> row = new Vector<Object>();
 				row.add("7615.1");
@@ -283,6 +282,9 @@ public class SensorEventSubcriber implements MqttCallback {
 				Main.gui.addTableRow(row);
 				
 				System.out.println("--Inserted into " + Consts.COLLECTION_ACTIVITIES + " : " + object); 
+				
+				// release time tracking for light
+				this.startOpenedWindowTime = null;
 			}
 		}
 	}
